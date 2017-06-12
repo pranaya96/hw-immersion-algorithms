@@ -4,18 +4,19 @@ import java.nio.channels.FileChannel;
 import java.nio.ByteBuffer;
 import java.io.IOException;
 import java.lang.Exception;
+import java.io.IOException;
 
 public class BasicIndex implements BaseIndex {
 	private static final int INT_SIZE = 4;
 
 	@Override
-	public PostingList readPosting(FileChannel fc) throws Throwable {
+	public PostingList readPosting(FileChannel fc) throws IOException {
 		/*
 		 * Allocate two ints, preparing for reading in termId and freq
 		 */
 		ByteBuffer buffer = ByteBuffer.allocate(INT_SIZE * 2);
 		int numOfBytesRead;
-		
+
 		/*
 		 * fc.read reads a sequence of bytes from the fc channel into 
 		 * buffer. Bytes are read starting at this channel's current 
@@ -42,20 +43,24 @@ public class BasicIndex implements BaseIndex {
 		 */	
 		int termId = buffer.getInt();
 		int freq = buffer.getInt();
-		
-		/* TODO:
-		 * You should create a PostingList and use buffer 
-		 * to fill it with docIds, then return the PostingList 
-		 * you created.
-		 * Hint: This differs from reading in termId/freq only 
-		 * in the number of ints to be read in.
-		 */		
-		
-		return null;
+
+		ByteBuffer docIdBuffer = ByteBuffer.allocate(INT_SIZE * freq);
+		int docIdNumOfBytesRead = fc.read(docIdBuffer);
+		if (docIdNumOfBytesRead == -1) return null;
+		docIdBuffer.rewind();
+
+		PostingList posting = new PostingList(termId);
+		List<Integer> list = posting.getList();
+		for (int i = 0; i < freq; ++i) {
+			list.add(docIdBuffer.getInt());
+		}
+
+		return posting;
+
 	}
 
 	@Override
-	public void writePosting(FileChannel fc, PostingList p) throws Throwable {
+	public void writePosting(FileChannel fc, PostingList p) throws IOException {
 		/*
 		 * The allocated space is for termID + freq + docIds in p
 		 */
