@@ -17,6 +17,7 @@ import java.util.HashMap;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.LinkedList;
+import java.util.List;
 
 public class Index {
 
@@ -32,6 +33,9 @@ public class Index {
 	// Block queue
 	private static LinkedList<File> blockQueue
 		= new LinkedList<File>();
+	
+
+
 
 	// Total file counter
 	private static int totalFileCount = 0;
@@ -55,6 +59,7 @@ public class Index {
 		 * TODO: Your code here
 		 *	 
 		 */
+
 	}
 
 	public static void main(String[] args) throws IOException {
@@ -116,6 +121,8 @@ public class Index {
 			File blockFile = new File(output, block.getName());
 			blockQueue.add(blockFile);
 
+			// docID -> PostingList
+			Map<Integer, PostingList> postingListMap = new TreeMap<Integer, PostingList>();
 			File blockDir = new File(root, block.getName());
 			File[] filelist = blockDir.listFiles(filter);
 			
@@ -124,6 +131,8 @@ public class Index {
 				++totalFileCount;
 				String fileName = block.getName() + "/" + file.getName();
 				docDict.put(fileName, docIdCounter++);
+				
+				
 				
 				BufferedReader reader = new BufferedReader(new FileReader(file));
 				String line;
@@ -135,9 +144,40 @@ public class Index {
 						 *       For each term, build up a list of
 						 *       documents in which the term occurs
 						 */
+						
+						if (!termDict.containsKey(token)) {
+							termDict.put(token, wordIdCounter++);
+						}
+						
+						if(!postingListMap.containsKey(termDict.get(token))) {
+							PostingList myPostingList = new PostingList(termDict.get(token));
+							List<Integer> list = myPostingList.getList();
+							list.add(docDict.get(fileName));
+							postingListMap.put(termDict.get(token), myPostingList);
+						}
+						else {
+							PostingList myPostingList =postingListMap.get(termDict.get(token));
+							List<Integer> list = myPostingList.getList();
+							if(!list.contains(docDict.get(fileName))){
+								list.add(docDict.get(fileName));
+							}
+
+						}
+						// System.out.println("Processing token " + token + " for file " + fileName);  
 					}
 				}
+				
+				
+
 				reader.close();
+			}
+
+			//printing to check the TreeMap for printing it with key and values
+			for(Map.Entry<Integer, PostingList> each : postingListMap.entrySet()) {
+				Integer key = each.getKey();
+				PostingList value = each.getValue();
+
+				System.out.println(key + " ==> " + value.getTermId() + value.getList().toString());
 			}
 
 			/* Sort and output */
@@ -147,6 +187,8 @@ public class Index {
 			}
 			
 			RandomAccessFile bfc = new RandomAccessFile(blockFile, "rw");
+			
+
 			
 			/*
 			 * TODO: Your code here
@@ -188,7 +230,7 @@ public class Index {
 			bf1.close();
 			bf2.close();
 			mf.close();
-			b1.delete();
+			b1.delete();		
 			b2.delete();
 			blockQueue.add(combfile);
 		}
