@@ -10,6 +10,7 @@ public class PostingList {
 	private List<Integer> postings;
 
 	public PostingList(int termId, List<Integer> list) {
+		System.out.println("test");
 		this.termId = termId;
 		this.postings = list;
 	}
