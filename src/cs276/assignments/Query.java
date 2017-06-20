@@ -135,6 +135,7 @@ public class Query {
 			for (Integer docId : pl.getList()) {
 			    System.out.print(" " + docId);
 			}
+			System.out.println();
 		    }
 
 		    /*
