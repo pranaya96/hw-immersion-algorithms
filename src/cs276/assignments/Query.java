@@ -7,6 +7,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.RandomAccessFile;
 import java.nio.channels.FileChannel;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -31,10 +33,8 @@ public class Query {
 	 * */
 	private static PostingList readPosting(FileChannel fc, int termId)
 			throws IOException {
-		/*
-		 * TODO: Your code here
-		 */
-		return null;
+		fc.position(posDict.get(termId));
+		return index.readPosting(fc);
 	}
 
 	public static void main(String[] args) throws IOException {
@@ -102,13 +102,49 @@ public class Query {
 
 		/* For each query */
 		while ((line = br.readLine()) != null) {
-			/*
-			 * TODO: Your code here
-			 *       Perform query processing with the inverted index.
-			 *       Make sure to print to stdout the list of documents
-			 *       containing the query terms, one document file on each
-			 *       line, sorted in lexicographical order.
-			 */
+		    FileChannel indexChannel = indexFile.getChannel();
+		    // Split the query into individual tokens.
+		    String[] queryTokens = line.split(" ");
+		    if (queryTokens.length <= 0) continue;
+
+		    // Fetch all the posting lists from the index.
+		    List<PostingList> postingLists = new ArrayList<PostingList>();
+		    boolean noResults = false;
+		    for (String queryToken : queryTokens) {
+			// Get the term id for this token using the termDict map.
+			Integer termId = termDict.get(queryToken);
+			if (termId == null) {
+			    noResults = true;
+			    continue;
+			}
+			else postingLists.add(readPosting(indexChannel, termId));
+		    }
+
+		    if (noResults) {
+			System.out.println("no results found");
+			continue;
+		    }
+
+		    // You will be adding your code to actually intersect all the posting
+		    // lists to find the results to the query below. For now, this prints out
+		    // The content of each of the posting lists to help you verify the
+		    // index you have built.
+		    for (PostingList pl : postingLists) {
+			System.out.println("TermId: " + pl.getTermId());
+			System.out.print("  ");
+			for (Integer docId : pl.getList()) {
+			    System.out.print(" " + docId);
+			}
+			System.out.println();
+		    }
+
+		    /*
+		     * TODO: Your code here
+		     *       Perform query processing with the inverted index.
+		     *       Make sure to print to stdout the list of documents
+		     *       containing the query terms, one document file on each
+		     *       line, sorted in lexicographical order.
+		     */
 		}
 		br.close();
 		indexFile.close();
